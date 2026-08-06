@@ -2,11 +2,11 @@
 
 Automatically detect **judi online (judol), scam, phishing, spam, toxic behavior & hate speech** before they damage your community. GuardAI scans every message in real time and acts instantly — a moderator that never sleeps.
 
-> 📌 Built to the `PRD.md` specification. This commit implements **Phase 1**.
+> 📌 Built to the `PRD.md` specification. **Phase 1 + Phase 2 complete.**
 
 ---
 
-## 🚀 Phase 1 — what's included
+## ✅ Phase 1 — what's included
 
 | Module | Status |
 |--------|--------|
@@ -17,7 +17,16 @@ Automatically detect **judi online (judol), scam, phishing, spam, toxic behavior
 | **Moderation logs** | ✅ Persisted per message + action, with search/filter/export |
 | **Landing page** | ✅ Modern SaaS dark/cyber theme, animated AI shield, features, how-it-works, pricing, FAQ |
 
-> Phase 2 (Discord, AI classifier, analytics) and Phase 3 (billing, marketplace) are scoped in `PRD.md`.
+## ✅ Phase 2 — what's added
+
+| Module | Status |
+|--------|--------|
+| **AI Classifier** | ✅ Dependency-free Multinomial Naive Bayes — *learns* from 96 labeled Indonesian examples (generalizes beyond keywords), fused into the engine as an optional signal. Optional OpenAI/LLM adapter (native fetch, key-gated). 8 tests |
+| **Discord integration** | ✅ `discord.js` bot wired to the same moderation core (delete/timeout/ban/warn), auto-binds guilds |
+| **Analytics** | ✅ Dedicated page: 30-day trend, category donut, action distribution, hourly heatmap, top offenders, KPI row |
+| **Detection playground v2** | ✅ Rule engine vs AI classifier side-by-side, per-category probability bars, rule-vs-AI risk comparison, AI toggle |
+
+> Phase 3 (premium/billing, advanced AI, marketplace rules) is scoped in `PRD.md`.
 
 ---
 
@@ -70,6 +79,7 @@ The app auto-seeds a demo community with sample messages on first run.
 | `npm test` | Run detection unit tests |
 | `npm run db:seed` | (Re)seed demo data |
 | `npm run bot` | Run the Telegram bot (long polling) |
+| `npm run bot:discord` | Run the Discord bot |
 
 ---
 
