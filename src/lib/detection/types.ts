@@ -54,6 +54,11 @@ export interface DetectionConfig {
   sensitivity: number;
   /** Per-category enable toggles. */
   enabled: Record<Exclude<DetectionCategory, "safe">, boolean>;
+  /**
+   * Phase 2: when true, fuse the AI classifier (Naive Bayes) output into the
+   * risk score as an additional signal. Default false preserves rule-only mode.
+   */
+  ai?: boolean;
 }
 
 export const DEFAULT_DETECTION_CONFIG: DetectionConfig = {
@@ -65,4 +70,5 @@ export const DEFAULT_DETECTION_CONFIG: DetectionConfig = {
     spam: true,
     toxic: true,
   },
+  ai: false,
 };

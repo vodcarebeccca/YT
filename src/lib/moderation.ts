@@ -66,7 +66,7 @@ export function moderate(
   msg: InboundMessage,
   config: CommunityConfig
 ): ModerationDecision {
-  const result = detect(msg.text, { sensitivity: config.sensitivity });
+  const result = detect(msg.text, { sensitivity: config.sensitivity, ai: true });
   const topCategory = result.categories[0] ?? "safe";
 
   // If protection is disabled, we still scan+log but never act.

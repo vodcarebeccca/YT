@@ -308,3 +308,57 @@ export function getCategoryBreakdown(communityId?: string) {
     .all(...args) as { category: string; c: number }[];
   return rows.map((r) => ({ category: r.category, count: r.c }));
 }
+
+/** Distribution of actions taken (for charts). */
+export function getActionDistribution(communityId?: string) {
+  const scope = communityId ? "WHERE community_id = ?" : "";
+  const args = communityId ? [communityId] : [];
+  const rows = getDb()
+    .prepare(
+      `SELECT action, COUNT(*) as c FROM moderation_logs ${scope} GROUP BY action ORDER BY c DESC`
+    )
+    .all(...args) as { action: string; c: number }[];
+  return rows.map((r) => ({ action: r.action, count: r.c }));
+}
+
+/** Top repeat offenders by action count (for analytics). */
+export function getTopOffenders(communityId?: string, limit = 8) {
+  const scope = communityId ? "WHERE community_id = ?" : "";
+  const args = communityId ? [communityId] : [];
+  const rows = getDb()
+    .prepare(
+      `SELECT sender_id, sender_name, COUNT(*) as actions, MAX(risk_score) as max_risk
+       FROM moderation_logs ${scope}
+       GROUP BY sender_id
+       ORDER BY actions DESC, max_risk DESC
+       LIMIT ?`
+    )
+    .all(...args, limit) as {
+      sender_id: string;
+      sender_name: string | null;
+      actions: number;
+      max_risk: number;
+    }[];
+  return rows.map((r) => ({
+    senderId: r.sender_id,
+    senderName: r.sender_name,
+    actions: r.actions,
+    maxRisk: r.max_risk,
+  }));
+}
+
+/** Hour-of-day activity distribution (when threats happen). */
+export function getHourlyDistribution(communityId?: string) {
+  const scope = communityId ? "WHERE community_id = ?" : "";
+  const args = communityId ? [communityId] : [];
+  const rows = getDb()
+    .prepare(
+      `SELECT CAST(strftime('%H', created_at) AS INTEGER) as hour, COUNT(*) as c
+       FROM moderation_logs ${scope}
+       GROUP BY hour ORDER BY hour ASC`
+    )
+    .all(...args) as { hour: number; c: number }[];
+  // fill all 24 hours
+  const byHour = new Map<number, number>(rows.map((r) => [r.hour, r.c]));
+  return Array.from({ length: 24 }, (_, h) => ({ hour: h, count: byHour.get(h) ?? 0 }));
+}

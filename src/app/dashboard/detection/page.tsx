@@ -8,13 +8,22 @@ import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import type { DetectionCategory, ModerationAction } from "@/lib/detection/types";
 
+interface AIResult {
+  category: string;
+  confidence: number;
+  probabilities: Record<string, number>;
+  enabled: boolean;
+}
+
 interface Result {
   normalized: string;
   riskScore: number;
+  ruleRiskScore: number;
   categories: DetectionCategory[];
   signals: { category: string; reason: string; weight: number }[];
   isSafe: boolean;
   action: ModerationAction;
+  ai: AIResult;
 }
 
 const EXAMPLES = [
@@ -29,6 +38,7 @@ const EXAMPLES = [
 export default function DetectionPage() {
   const [text, setText] = useState("");
   const [mode, setMode] = useState<"safe" | "balanced" | "aggressive">("balanced");
+  const [useAI, setUseAI] = useState(true);
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<Result | null>(null);
 
@@ -40,7 +50,7 @@ export default function DetectionPage() {
     const res = await fetch("/api/detect", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ text: input, mode }),
+      body: JSON.stringify({ text: input, mode, ai: useAI }),
     });
     setLoading(false);
     if (res.ok) setResult(await res.json());
@@ -69,22 +79,36 @@ export default function DetectionPage() {
           />
 
           <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
-            <div className="flex items-center gap-2">
-              <span className="text-xs text-slate-500">Mode:</span>
-              {(["safe", "balanced", "aggressive"] as const).map((m) => (
-                <button
-                  key={m}
-                  onClick={() => setMode(m)}
-                  className={cn(
-                    "rounded-lg px-3 py-1.5 text-xs font-medium capitalize transition-colors",
-                    mode === m
-                      ? "bg-accent-cyan/20 text-accent-cyan border border-accent-cyan/40"
-                      : "border border-border text-slate-400 hover:text-white"
-                  )}
-                >
-                  {m}
-                </button>
-              ))}
+            <div className="flex flex-wrap items-center gap-4">
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-slate-500">Mode:</span>
+                {(["safe", "balanced", "aggressive"] as const).map((m) => (
+                  <button
+                    key={m}
+                    onClick={() => setMode(m)}
+                    className={cn(
+                      "rounded-lg px-3 py-1.5 text-xs font-medium capitalize transition-colors",
+                      mode === m
+                        ? "bg-accent-cyan/20 text-accent-cyan border border-accent-cyan/40"
+                        : "border border-border text-slate-400 hover:text-white"
+                    )}
+                  >
+                    {m}
+                  </button>
+                ))}
+              </div>
+              <button
+                onClick={() => setUseAI(!useAI)}
+                className={cn(
+                  "flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors",
+                  useAI
+                    ? "bg-accent-purple/20 text-accent-purple border border-accent-purple/40"
+                    : "border border-border text-slate-400 hover:text-white"
+                )}
+              >
+                <Sparkles className="h-3.5 w-3.5" />
+                AI classifier {useAI ? "on" : "off"}
+              </button>
             </div>
             <Button onClick={() => analyze()} disabled={loading || !text.trim()}>
               {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <ScanSearch className="h-4 w-4" />}
@@ -155,7 +179,20 @@ function ResultPanel({ result, mode }: { result: Result; mode: string }) {
               <Badge key={c} variant={categoryVariant(c)}>{c}</Badge>
             ))}
           </div>
+          {result.ai.enabled && (
+            <div className="mt-3 flex items-center gap-2 text-xs text-slate-500">
+              Rule-only score: <span className="text-slate-300">{result.ruleRiskScore}</span>
+              {result.ruleRiskScore !== result.riskScore && (
+                <>
+                  <span>→</span>
+                  <span className="text-accent-purple">AI-fused: {result.riskScore}</span>
+                </>
+              )}
+            </div>
+          )}
         </Card>
+
+        {result.ai.enabled && <AIPanel ai={result.ai} />}
 
         <Card className="p-6">
           <h3 className="mb-3 text-sm font-semibold text-slate-300">Detection signals</h3>
@@ -209,4 +246,46 @@ function categoryVariant(c: string): any {
     safe: "default",
   };
   return (map[c] ?? "default") as any;
+}
+
+const AI_COLOR: Record<string, string> = {
+  gambling: "#a855f7",
+  scam: "#ef4444",
+  phishing: "#f59e0b",
+  spam: "#22d3ee",
+  toxic: "#22c55e",
+  safe: "#64748b",
+};
+
+function AIPanel({ ai }: { ai: AIResult }) {
+  const entries = Object.entries(ai.probabilities).sort((a, b) => b[1] - a[1]);
+  return (
+    <Card className="border-accent-purple/30 p-6">
+      <h3 className="mb-1 flex items-center gap-2 text-sm font-semibold text-slate-300">
+        <Sparkles className="h-4 w-4 text-accent-purple" />
+        AI Classifier (Naive Bayes)
+      </h3>
+      <p className="mb-4 text-xs text-slate-500">
+        Predicted{" "}
+        <span className="font-medium capitalize" style={{ color: AI_COLOR[ai.category] }}>
+          {ai.category}
+        </span>{" "}
+        with {ai.confidence}% confidence — learns from examples, generalizes beyond keywords.
+      </p>
+      <div className="space-y-2">
+        {entries.map(([cat, prob]) => (
+          <div key={cat} className="flex items-center gap-3">
+            <span className="w-16 text-xs capitalize text-slate-400">{cat}</span>
+            <div className="h-2 flex-1 overflow-hidden rounded-full bg-background-elevated">
+              <div
+                className="h-full rounded-full transition-all"
+                style={{ width: `${Math.round(prob * 100)}%`, background: AI_COLOR[cat] ?? "#22d3ee" }}
+              />
+            </div>
+            <span className="w-10 text-right text-xs text-slate-500">{Math.round(prob * 100)}%</span>
+          </div>
+        ))}
+      </div>
+    </Card>
+  );
 }

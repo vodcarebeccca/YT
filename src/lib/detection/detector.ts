@@ -9,6 +9,7 @@
  */
 
 import { normalizeText } from "./normalize";
+import { classify as aiClassify } from "@/lib/ai/classifier";
 import {
   GAMBLING_TERMS,
   SCAM_PATTERNS,
@@ -209,6 +210,7 @@ export function detect(
       toxic: true,
       ...config.enabled,
     },
+    ai: config.ai ?? false,
   };
 
   const { normalized, cleaned, lower } = normalizeText(raw);
@@ -221,6 +223,22 @@ export function detect(
   if (cfg.enabled.phishing) signals.push(...detectPhishing(cleaned));
   if (cfg.enabled.spam) signals.push(...detectSpam(cleaned));
   if (cfg.enabled.toxic) signals.push(...detectToxic(normalized));
+
+  // --- Phase 2: AI classifier fusion ---
+  // Adds a learned (Naive Bayes) signal that can catch paraphrases the rule
+  // dictionary misses. Only adds threat signals (safe predictions contribute
+  // nothing, naturally keeping clean messages low-risk).
+  if (cfg.ai) {
+    const clf = aiClassify(raw);
+    if (clf.category !== "safe") {
+      signals.push({
+        category: clf.category,
+        reason: `AI classifier: ${clf.category} (${Math.round(clf.confidence * 100)}%)`,
+        weight: Math.min(0.85, clf.confidence * 0.7),
+        match: `ai:${clf.category}`,
+      });
+    }
+  }
 
   // --- Context adjustment ---
   // If the message is clearly a warning *about* threats ("jangan klik link judi"),

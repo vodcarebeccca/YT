@@ -10,6 +10,7 @@ import {
   Settings,
   ShieldCheck,
   LogOut,
+  BarChart3,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { signOut } from "next-auth/react";
@@ -19,6 +20,7 @@ const NAV = [
   { href: "/dashboard/communities", label: "Communities", icon: Users },
   { href: "/dashboard/logs", label: "Moderation Logs", icon: ScrollText },
   { href: "/dashboard/detection", label: "Threat Detection", icon: ShieldAlert },
+  { href: "/dashboard/analytics", label: "Analytics", icon: BarChart3 },
   { href: "/dashboard/settings", label: "Settings", icon: Settings },
 ];
 
