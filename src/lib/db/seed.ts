@@ -3,9 +3,10 @@
  * Idempotent — only seeds when the database is empty.
  */
 import bcrypt from "bcryptjs";
-import { countUsers, createUser } from "./users";
+import { countUsers, createUser, getUserByEmail, updatePlan } from "./users";
 import { createCommunity, getCommunityByPlatformRef } from "./communities";
 import { logMessage, logModeration } from "./logs";
+import { createPack, listPacks } from "./marketplace";
 import { detect } from "@/lib/detection/detector";
 import type { ProtectionMode } from "@/lib/detection/types";
 import { DEMO_CREDENTIALS } from "@/lib/constants";
@@ -24,12 +25,85 @@ const SAMPLE_MESSAGES = [
   "Terima kasih infonya, sangat membantu",
 ];
 
+/** Seed a few starter marketplace packs if none exist. */
+function seedPacksIfEmpty(): void {
+  if (listPacks().length > 0) return;
+  const admin = getUserByEmail(DEMO_CREDENTIALS.email);
+  if (!admin) return;
+
+  const STARTER = [
+    {
+      name: "Anti Judol Strict (ID)",
+      description: "Daftar kata judi online + obfuscation umum. Sensitivitas tinggi untuk komunitas Indonesia.",
+      language: "id" as const,
+      focus: "gambling",
+      content: {
+        ban: [
+          { term: "maxwin", category: "gambling", weight: 0.9 },
+          { term: "gacor", category: "gambling", weight: 0.9 },
+          { term: "rtp", category: "gambling", weight: 0.6 },
+          { term: "pgsoft", category: "gambling", weight: 0.6 },
+          { term: "pragmatic", category: "gambling", weight: 0.5 },
+        ],
+        allow: [],
+        instructions: ["Be strict against gambling."],
+        sensitivity: 50,
+        mode: "aggressive",
+      },
+    },
+    {
+      name: "Crypto Scam Shield (EN)",
+      description: "Catches fake giveaways, airdrop gas-fee scams and impersonation in English crypto communities.",
+      language: "en" as const,
+      focus: "scam",
+      content: {
+        ban: [
+          { term: "gas fee", category: "scam", weight: 0.6 },
+          { term: "send me", category: "scam", weight: 0.4 },
+        ],
+        allow: ["airdrop"],
+        instructions: ["Be strict against scam and phishing."],
+        sensitivity: 55,
+        mode: "balanced",
+      },
+    },
+    {
+      name: "Family-Friendly (Multi)",
+      description: "Toxicity-first rules + safe-word allowlist. Great for education & family communities.",
+      language: "multi" as const,
+      focus: "toxic",
+      content: {
+        ban: [
+          { term: "kontol", category: "toxic", weight: 0.9 },
+          { term: "memek", category: "toxic", weight: 0.9 },
+          { term: "anjing", category: "toxic", weight: 0.6 },
+          { term: "fuck", category: "toxic", weight: 0.7 },
+        ],
+        allow: [],
+        instructions: ["Keep the community family-friendly."],
+        sensitivity: 45,
+        mode: "balanced",
+      },
+    },
+  ];
+
+  for (const p of STARTER) {
+    createPack({ ...p, ownerId: admin.id });
+  }
+}
+
 /** Ensure schema exists + demo data is seeded. Idempotent; safe to call anywhere. */
 export function ensureReady(): void {
   migrate();
   if (countUsers() === 0) {
     seedSync();
   }
+  // Make sure the demo account is on the top plan (so all features are explorable).
+  const demo = getUserByEmail(DEMO_CREDENTIALS.email);
+  if (demo && demo.plan === "free") {
+    updatePlan(demo.id, "business");
+  }
+  seedPacksIfEmpty();
 }
 
 /** Async-compatible alias (operations are synchronous under node:sqlite). */
@@ -45,6 +119,8 @@ function seedSync(): void {
     passwordHash,
     role: "admin",
   });
+  // Demo account gets the top plan so all Phase 3 features are explorable.
+  updatePlan(user.id, "business");
 
   const community =
     getCommunityByPlatformRef("telegram", "-1001234567890") ??

@@ -100,7 +100,44 @@ CREATE TABLE IF NOT EXISTS daily_stats (
   banned       INTEGER NOT NULL DEFAULT 0,
   UNIQUE (community_id, date)
 );
+
+-- ---------------- Phase 3: Custom Rules & Marketplace ----------------
+
+-- Per-community custom moderation rules (banned/allowed words, AI instructions)
+CREATE TABLE IF NOT EXISTS custom_rules (
+  id            TEXT PRIMARY KEY,
+  community_id  TEXT NOT NULL REFERENCES communities(id) ON DELETE CASCADE,
+  rule_type     TEXT NOT NULL,        -- 'ban' | 'allow' | 'ai_instruction'
+  term          TEXT NOT NULL,        -- the word/phrase (or instruction text)
+  category      TEXT NOT NULL DEFAULT 'custom',
+  weight        REAL NOT NULL DEFAULT 0.6,
+  created_at    TEXT NOT NULL DEFAULT (datetime('now')),
+  UNIQUE (community_id, rule_type, term)
+);
+CREATE INDEX IF NOT EXISTS idx_custom_community ON custom_rules(community_id);
+
+-- Marketplace: shareable rule packs
+CREATE TABLE IF NOT EXISTS rule_packs (
+  id           TEXT PRIMARY KEY,
+  owner_id     TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  name         TEXT NOT NULL,
+  description  TEXT,
+  language     TEXT NOT NULL DEFAULT 'id',   -- id | en | ms | multi
+  focus        TEXT NOT NULL DEFAULT 'general',
+  content      TEXT NOT NULL,                -- JSON payload
+  installs     INTEGER NOT NULL DEFAULT 0,
+  created_at   TEXT NOT NULL DEFAULT (datetime('now'))
+);
+CREATE INDEX IF NOT EXISTS idx_packs_focus ON rule_packs(focus);
 `;
+
+/** Add a column to a table if it doesn't already exist (idempotent ALTER). */
+function addColumn(db: any, table: string, column: string, def: string) {
+  const cols = db.prepare(`PRAGMA table_info(${table})`).all() as { name: string }[];
+  if (!cols.some((c) => c.name === column)) {
+    db.exec(`ALTER TABLE ${table} ADD COLUMN ${column} ${def};`);
+  }
+}
 
 let _migrated = false;
 
@@ -110,6 +147,10 @@ export function migrate(): void {
   const { getDb } = require("./client");
   const db = getDb();
   db.exec(SCHEMA_SQL);
+  // Phase 3 columns on users (idempotent ALTER)
+  addColumn(db, "users", "plan", "TEXT NOT NULL DEFAULT 'free'");
+  addColumn(db, "users", "plan_status", "TEXT NOT NULL DEFAULT 'active'");
+  addColumn(db, "users", "plan_expires", "TEXT");
   _migrated = true;
 }
 

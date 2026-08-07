@@ -9,6 +9,9 @@ export interface User {
   image: string | null;
   passwordHash: string | null;
   role: string;
+  plan: string;
+  planStatus: string;
+  planExpires: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -23,6 +26,9 @@ function row(r: any): User | null {
     image: r.image,
     passwordHash: r.password_hash,
     role: r.role,
+    plan: r.plan ?? "free",
+    planStatus: r.plan_status ?? "active",
+    planExpires: r.plan_expires ?? null,
     createdAt: r.created_at,
     updatedAt: r.updated_at,
   };
@@ -56,4 +62,15 @@ export function createUser(input: {
 export function countUsers(): number {
   const r = getDb().prepare("SELECT COUNT(*) as c FROM users").get() as { c: number };
   return r.c;
+}
+
+export function updatePlan(
+  id: string,
+  plan: string,
+  status: string = "active",
+  expires: string | null = null
+): void {
+  getDb()
+    .prepare("UPDATE users SET plan = ?, plan_status = ?, plan_expires = ?, updated_at = datetime('now') WHERE id = ?")
+    .run(plan, status, expires, id);
 }

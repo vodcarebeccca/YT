@@ -2,7 +2,7 @@
 
 Automatically detect **judi online (judol), scam, phishing, spam, toxic behavior & hate speech** before they damage your community. GuardAI scans every message in real time and acts instantly — a moderator that never sleeps.
 
-> 📌 Built to the `PRD.md` specification. **Phase 1 + Phase 2 complete.**
+> 📌 Built to the `PRD.md` specification. **Phase 1 + Phase 2 + Phase 3 complete — full PRD shipped.**
 
 ---
 
@@ -27,6 +27,17 @@ Automatically detect **judi online (judol), scam, phishing, spam, toxic behavior
 | **Detection playground v2** | ✅ Rule engine vs AI classifier side-by-side, per-category probability bars, rule-vs-AI risk comparison, AI toggle |
 
 > Phase 3 (premium/billing, advanced AI, marketplace rules) is scoped in `PRD.md`.
+
+## ✅ Phase 3 — what's added
+
+| Module | Status |
+|--------|--------|
+| **Premium / Billing** | ✅ Plan tiers (Free / Pro / Business) with feature gating, community-limit enforcement, Billing page + demo upgrade flow (Stripe-ready) |
+| **Advanced AI** | ✅ Per-community custom rules (ban/allow words → signals), AI personality instructions (strictness bias), multi-language (Indonesian + English + Malay) classifier training |
+| **Marketplace** | ✅ Publish/browse/install shareable rule packs; install copies ban/allow/instructions into a community. Seeded with starter packs |
+| **Custom rules UI** | ✅ Settings → manage banned words, allowlist & AI instructions per community |
+
+> This completes the PRD roadmap (Phase 1 → 2 → 3).
 
 ---
 

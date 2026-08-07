@@ -211,6 +211,7 @@ export function detect(
       ...config.enabled,
     },
     ai: config.ai ?? false,
+    customRuleset: config.customRuleset,
   };
 
   const { normalized, cleaned, lower } = normalizeText(raw);
@@ -237,6 +238,51 @@ export function detect(
         weight: Math.min(0.85, clf.confidence * 0.7),
         match: `ai:${clf.category}`,
       });
+    }
+  }
+
+  // --- Phase 3: custom rules (per-community) ---
+  // ban terms add signals; allow terms suppress matching signals; AI personality
+  // instructions boost strictness for the categories they mention.
+  if (cfg.customRuleset) {
+    const { ban, allow, instructions } = cfg.customRuleset;
+
+    // add custom ban signals
+    for (const b of ban) {
+      const re = new RegExp(`(^|[^a-z0-9])${escapeRegex(b.term)}([^a-z0-9]|$)`, "i");
+      if (re.test(normalized)) {
+        const validCats = ["gambling", "scam", "phishing", "spam", "toxic"];
+        const cat = (validCats.includes(b.category) ? b.category : "gambling") as Exclude<
+          DetectionCategory,
+          "safe"
+        >;
+        signals.push({
+          category: cat,
+          reason: `custom banned word: ${b.term}`,
+          weight: b.weight,
+          match: b.term,
+        });
+      }
+    }
+
+    // allow terms suppress any signal whose match equals an allowed term
+    if (allow.length) {
+      const allowSet = new Set(allow);
+      signals = signals.filter((s) => !allowSet.has(s.match ?? ""));
+    }
+
+    // AI personality: instructions mentioning a category make it stricter
+    if (instructions.length) {
+      const instr = instructions.join(" ").toLowerCase();
+      const strictCats: DetectionCategory[] = [];
+      for (const c of ["gambling", "scam", "phishing", "spam", "toxic"] as DetectionCategory[]) {
+        if (instr.includes(c)) strictCats.push(c);
+      }
+      if (strictCats.length) {
+        signals = signals.map((s) =>
+          strictCats.includes(s.category) ? { ...s, weight: Math.min(1, s.weight * 1.3) } : s
+        );
+      }
     }
   }
 

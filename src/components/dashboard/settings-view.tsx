@@ -7,6 +7,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
+import { CustomRulesEditor } from "./custom-rules-editor";
 
 const MODES = [
   { value: "safe", label: "Safe", desc: "Warn only — never delete" },
@@ -14,7 +15,7 @@ const MODES = [
   { value: "aggressive", label: "Aggressive", desc: "Delete + mute + ban" },
 ] as const;
 
-export function SettingsView({ communities }: { communities: any[] }) {
+export function SettingsView({ communities, canUseCustomRules }: { communities: any[]; canUseCustomRules: boolean }) {
   if (communities.length === 0) {
     return (
       <div className="flex-1 overflow-y-auto">
@@ -36,7 +37,10 @@ export function SettingsView({ communities }: { communities: any[] }) {
       <Header />
       <div className="space-y-6 p-8">
         {communities.map((c) => (
-          <CommunitySettings key={c.id} community={c} />
+          <div key={c.id} className="space-y-6">
+            <CommunitySettings community={c} />
+            {canUseCustomRules && <CustomRulesEditor communityId={c.id} />}
+          </div>
         ))}
       </div>
     </div>

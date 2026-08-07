@@ -108,4 +108,32 @@ export const TRAINING_DATA: TrainingExample[] = [
   { text: "makasih udah bantu, sukses terus", label: "safe" },
   { text: "good morning everyone, have a nice day", label: "safe" },
   { text: "itung-itung belajar dulu sebelum mulai", label: "safe" },
+
+  // ---------------- English ----------------
+  { text: "join now, best online slots and casino bonus", label: "gambling" },
+  { text: "sports betting tips, guaranteed win tonight", label: "gambling" },
+  { text: "congratulations you won a prize, claim now", label: "scam" },
+  { text: "I am the real admin, send the fee to verify", label: "scam" },
+  { text: "verify your account at secure-login now", label: "phishing" },
+  { text: "click this bit ly link for free reward", label: "phishing" },
+  { text: "BUY NOW CHEAP PROMO CONTACT ME IMMEDIATELY", label: "spam" },
+  { text: "cheap instagram followers, dm me fast", label: "spam" },
+  { text: "you are stupid and an idiot, get lost", label: "toxic" },
+  { text: "I will destroy you, watch your back", label: "toxic" },
+  { text: "thanks for the update, really helpful", label: "safe" },
+  { text: "how do I sign up for this app", label: "safe" },
+
+  // ---------------- Malay ----------------
+  { text: "slot gacor malaysia, daftar sekarang bonus besar", label: "gambling" },
+  { text: "tahniah anda menang hadiah, klik untuk klaim", label: "scam" },
+  { text: "sahkan akaun anda di link ini sekarang", label: "phishing" },
+  { text: "PROMO JUAL MURAH HUBUNGI SEKARANG", label: "spam" },
+  { text: "bodoh betul lah kau, pergi lah", label: "toxic" },
+  { text: "terima kasih banyak, sangat membantu", label: "safe" },
+
+  // Extra safe greetings (disambiguate "selamat"/"welcome" from scam/phishing)
+  { text: "selamat datang di grup, semoga betah ya", label: "safe" },
+  { text: "selamat bergabung di komunitas kami", label: "safe" },
+  { text: "selamat malam semuanya, mari kenalan", label: "safe" },
+  { text: "welcome to the group, make yourself at home", label: "safe" },
 ];

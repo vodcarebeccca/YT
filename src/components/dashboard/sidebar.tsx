@@ -11,6 +11,8 @@ import {
   ShieldCheck,
   LogOut,
   BarChart3,
+  CreditCard,
+  Store,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { signOut } from "next-auth/react";
@@ -21,7 +23,9 @@ const NAV = [
   { href: "/dashboard/logs", label: "Moderation Logs", icon: ScrollText },
   { href: "/dashboard/detection", label: "Threat Detection", icon: ShieldAlert },
   { href: "/dashboard/analytics", label: "Analytics", icon: BarChart3 },
+  { href: "/dashboard/marketplace", label: "Marketplace", icon: Store },
   { href: "/dashboard/settings", label: "Settings", icon: Settings },
+  { href: "/dashboard/billing", label: "Billing", icon: CreditCard },
 ];
 
 export function Sidebar({ userName, userEmail }: { userName?: string | null; userEmail?: string | null }) {

@@ -11,6 +11,7 @@
  */
 import { detect } from "@/lib/detection/detector";
 import { logMessage, logModeration } from "@/lib/db/logs";
+import { getCustomRuleset } from "@/lib/db/custom-rules";
 import type {
   ModerationAction,
   ProtectionMode,
@@ -66,7 +67,11 @@ export function moderate(
   msg: InboundMessage,
   config: CommunityConfig
 ): ModerationDecision {
-  const result = detect(msg.text, { sensitivity: config.sensitivity, ai: true });
+  const result = detect(msg.text, {
+    sensitivity: config.sensitivity,
+    ai: true,
+    customRuleset: getCustomRuleset(config.id),
+  });
   const topCategory = result.categories[0] ?? "safe";
 
   // If protection is disabled, we still scan+log but never act.

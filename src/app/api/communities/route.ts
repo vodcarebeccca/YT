@@ -3,7 +3,8 @@ import { getServerSession } from "next-auth";
 import { z } from "zod";
 import { authOptions } from "@/lib/auth";
 import { createCommunity, listCommunitiesByOwner } from "@/lib/db/communities";
-import { migrate } from "@/lib/db/schema";
+import { ensureReady } from "@/lib/db/seed";
+import { getEntitlement } from "@/lib/plans";
 
 const schema = z.object({
   name: z.string().min(1).max(80),
@@ -14,7 +15,7 @@ const schema = z.object({
 });
 
 export async function GET() {
-  migrate();
+  ensureReady();
   const session = await getServerSession(authOptions);
   if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const rows = listCommunitiesByOwner(session.user.id);
@@ -22,9 +23,18 @@ export async function GET() {
 }
 
 export async function POST(req: Request) {
-  migrate();
+  ensureReady();
   const session = await getServerSession(authOptions);
   if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  // Enforce plan community limit
+  const ent = getEntitlement(session.user.id);
+  if (!ent.canAddCommunity) {
+    return NextResponse.json(
+      { error: `Your ${ent.plan} plan allows ${ent.communitiesLimit} community. Upgrade to add more.` },
+      { status: 402 }
+    );
+  }
 
   const body = await req.json().catch(() => null);
   const parsed = schema.safeParse(body);

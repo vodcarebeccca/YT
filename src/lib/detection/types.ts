@@ -22,6 +22,14 @@ export type ProtectionMode = "safe" | "balanced" | "aggressive";
 
 export type Platform = "telegram" | "discord";
 
+/** Per-community custom rules injected into the pipeline (Phase 3). */
+export interface CustomRuleset {
+  ban: { term: string; category: DetectionCategory; weight: number }[];
+  allow: string[];
+  /** Free-text "AI personality" instructions (e.g. "be strict on gambling"). */
+  instructions: string[];
+}
+
 export interface Signal {
   category: Exclude<DetectionCategory, "safe">;
   /** Human-readable reason, e.g. "matched gambling keyword: gacor". */
@@ -59,6 +67,10 @@ export interface DetectionConfig {
    * risk score as an additional signal. Default false preserves rule-only mode.
    */
   ai?: boolean;
+  /**
+   * Phase 3: per-community custom ban/allow rules + AI personality instructions.
+   */
+  customRuleset?: CustomRuleset;
 }
 
 export const DEFAULT_DETECTION_CONFIG: DetectionConfig = {
